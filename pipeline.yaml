@@ -1,0 +1,36 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: tax-calculator-pipeline
+spec:
+  workspaces:
+    - name: source
+  tasks:
+    - name: npm-install
+      taskRef:
+        name: npm-install
+      workspaces:
+        - name: source
+          workspace: source
+
+    - name: tests
+      taskRef:
+        name: run-jasmine
+      workspaces:
+        - name: source
+          workspace: source
+      runAfter:
+        - npm-install
+
+    - name: build
+      taskRef:
+        name: buildah
+        kind: ClusterTask
+      params:
+        - name: IMAGE
+          value: us.icr.io/$(params.registry-namespace)/tax-calculator:latest
+      workspaces:
+        - name: source
+          workspace: source
+      runAfter:
+        - tests
